@@ -38,23 +38,32 @@ def get_roku_info(ip):
     Get Roku device info using the ECP API.
     :param ip: IP address of the Roku device.
     """
-    url = f'http://{ip}:8060/query/device-info'
+    port = 8060  # Default ECP port
+    url = f'http://{ip}:{port}/query/device-info'
     response = requests.get(url)
     if response.status_code == 200:
         xml_root = ET.fromstring(response.content)
-        for elem in xml_root.iter():
-            print(f'{elem.tag}: {elem.text}')
+        device_info = {elem.tag: elem.text for elem in xml_root.iter()}
+        device_info['IP'] = ip
+        device_info['Port'] = port
+        return device_info
     else:
-        print(f'Failed to get info from Roku device at {ip}')
+        return None
 
-if __name__ == '__main__':
+def main():
     devices = discover_roku_devices()
     if devices:
         print('Found Roku devices:')
         for ip in devices:
-            print(f' - {ip}')
-            get_roku_info(ip)
+            info = get_roku_info(ip)
+            if info:
+                print(f"Device Info for IP {ip}:")
+                for key, value in info.items():
+                    print(f"{key}: {value}")
+            else:
+                print(f"Could not retrieve info for IP {ip}")
     else:
         print('No Roku devices found.')
 
-#
+if __name__ == '__main__':
+    main()
